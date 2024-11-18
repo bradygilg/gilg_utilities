@@ -1,0 +1,20 @@
+Metadata-Version: 2.1
+Name: gilg_utils
+Version: 0.0.0
+Summary: Shared repo of utilities used by Brady Gilg.
+License: Brady Gilg
+Project-URL: Homepage, https://github.com/bradygilg/gilg_utilities
+Requires-Python: >=3.7
+Description-Content-Type: text/markdown
+Requires-Dist: pandas>=1.5.0
+Requires-Dist: numpy
+Provides-Extra: all
+Requires-Dist: gilg_utils[dev,pytorch,test]; extra == "all"
+Provides-Extra: dev
+Requires-Dist: jupyter>=1.0.0; extra == "dev"
+Requires-Dist: pip-tools>=6.0.0; extra == "dev"
+Provides-Extra: test
+Requires-Dist: pytest>=7.0.0; extra == "test"
+
+# gilg_utilities
+Utility functions for machine learning

@@ -1,0 +1,29 @@
+# Template from https://github.com/pypa/sampleproject/blob/main/pyproject.toml
+# This file can be converted to a requirements.txt file with
+# pip-compile -v -o requirements.txt pyproject.toml
+[project]
+name = "gilg_utils"
+description = "Shared repo of utilities used by Brady Gilg."
+readme = "README.md"
+requires-python = ">=3.7"
+license = {text = "Brady Gilg"}
+dynamic = ["version"]
+dependencies = [
+    "pandas>=1.5.0",
+    "numpy"
+]
+[project.optional-dependencies]
+all = ["gilg_utils[dev,test,pytorch]"]
+dev = ["jupyter>=1.0.0",
+       "pip-tools>=6.0.0"]
+test = ["pytest>=7.0.0"]
+
+[project.urls]
+"Homepage" = "https://github.com/bradygilg/gilg_utilities"
+
+[build-system]
+requires = ["setuptools>=45", "setuptools_scm[toml]>=6.2", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["gilg_utils"]
