@@ -9,5 +9,8 @@ gilg_utils[dev,pytorch,test]
 jupyter>=1.0.0
 pip-tools>=6.0.0
 
+[pytorch]
+torch>=2.0.1
+
 [test]
 pytest>=7.0.0

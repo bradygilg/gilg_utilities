@@ -202,7 +202,7 @@ class PytorchNeuralNetworkRegressor(Model):
         optimizer = getattr(torch.optim, optimizer_name)(model.parameters(), lr=learning_rate)
 
         # Main training loop
-        train_loss = np.Inf
+        train_loss = np.inf
         epoch = 0
         while epoch <= max_epochs:
             pred_y = model(train_data_x)
@@ -233,6 +233,7 @@ class PytorchNeuralNetworkRegressor(Model):
         :rtype: pd.Series
         """
         super().predict(test_df)
+        import torch
         # Scale features
         test_data_x = test_df['Data'][self.features].values
         test_data_x = self.scaler.transform(test_data_x)
@@ -254,6 +255,7 @@ class PytorchNeuralNetworkRegressor(Model):
         :type folder: str
         """
         super().save(folder)
+        import torch
         model_path = path.join(folder, 'nn.mdl')
         scaler_path = path.join(folder, 'scaler.pkl')
 
@@ -270,7 +272,8 @@ class PytorchNeuralNetworkRegressor(Model):
         :rtype: None
         """
         super().load(folder)
+        import torch
         model_path = path.join(folder, 'nn.mdl')
         scaler_path = path.join(folder, 'scaler.pkl')
-        self.regressor_model = torch.load(model_path)
+        self.regressor_model = torch.load(model_path, weights_only=False)
         self.scaler = load_pickle(scaler_path)

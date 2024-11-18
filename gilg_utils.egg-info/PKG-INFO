@@ -16,6 +16,18 @@ Requires-Dist: jupyter>=1.0.0; extra == "dev"
 Requires-Dist: pip-tools>=6.0.0; extra == "dev"
 Provides-Extra: test
 Requires-Dist: pytest>=7.0.0; extra == "test"
+Provides-Extra: pytorch
+Requires-Dist: torch>=2.0.1; extra == "pytorch"
 
 # gilg_utilities
-Utility functions for machine learning
+A set of utility functions for machine learning.
+
+## Installation
+
+To install with pip,
+
+`pip install gilg_utils @ git+https://github.com/bradygilg/gilg_utilities.git`
+
+Optional dependencies (including pytorch) are included in pyproject.toml. To install all of the optional dependencies, run
+
+`pip install gilg_utils[all] @ git+https://github.com/bradygilg/gilg_utilities.git`
