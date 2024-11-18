@@ -15,9 +15,14 @@ dependencies = [
 ]
 [project.optional-dependencies]
 all = ["gilg_utils[dev,test,pytorch]"]
-dev = ["jupyter>=1.0.0",
-       "pip-tools>=6.0.0"]
+dev = [
+        "jupyter>=1.0.0",
+        "pip-tools>=6.0.0"
+       ]
 test = ["pytest>=7.0.0"]
+pytorch = [
+        "torch>=2.0.1",
+        ]
 
 [project.urls]
 "Homepage" = "https://github.com/bradygilg/gilg_utilities"

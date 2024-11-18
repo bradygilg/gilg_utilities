@@ -1,5 +1,6 @@
 pandas>=1.5.0
 numpy
+scikit-learn
 
 [all]
 gilg_utils[dev,pytorch,test]

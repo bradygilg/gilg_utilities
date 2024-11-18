@@ -8,6 +8,7 @@ Requires-Python: >=3.7
 Description-Content-Type: text/markdown
 Requires-Dist: pandas>=1.5.0
 Requires-Dist: numpy
+Requires-Dist: scikit-learn
 Provides-Extra: all
 Requires-Dist: gilg_utils[dev,pytorch,test]; extra == "all"
 Provides-Extra: dev

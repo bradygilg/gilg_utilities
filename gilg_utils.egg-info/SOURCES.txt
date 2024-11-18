@@ -1,6 +1,10 @@
+.gitignore
 README.md
 pyproject.toml
+.ipynb_checkpoints/pyproject-checkpoint.toml
 gilg_utils/__init__.py
+gilg_utils/general.py
+gilg_utils/models.py
 gilg_utils.egg-info/PKG-INFO
 gilg_utils.egg-info/SOURCES.txt
 gilg_utils.egg-info/dependency_links.txt
