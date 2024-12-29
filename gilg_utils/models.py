@@ -173,7 +173,6 @@ class PytorchNeuralNetworkRegressor(Model):
         # Build the scaler
         train_data_x = train_df['Data'].values
         train_data_y = train_df['Label'].values
-        
         scaler = StandardScaler()
         scaler.fit(train_data_x)
         train_data_x = scaler.transform(train_data_x)
@@ -211,8 +210,9 @@ class PytorchNeuralNetworkRegressor(Model):
 
             model.zero_grad()
             loss.backward()
+            optimizer.step()
 
-            if test_flag & (epoch % callback_period == 0):
+            if test_flag and (epoch % callback_period == 0):
                 test_pred_y = model(test_data_x)
                 loss = loss_function(test_pred_y, test_data_y)
                 test_loss = loss.item()
