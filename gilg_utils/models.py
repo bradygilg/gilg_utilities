@@ -212,11 +212,14 @@ class PytorchNeuralNetworkRegressor(Model):
             loss.backward()
             optimizer.step()
 
-            if test_flag and (epoch % callback_period == 0):
-                test_pred_y = model(test_data_x)
-                loss = loss_function(test_pred_y, test_data_y)
-                test_loss = loss.item()
-                print(f'Epoch {epoch} Train loss: {np.round(train_loss,4)} Test loss: {np.round(test_loss,4)}')
+            if (epoch % callback_period == 0):
+                if test_flag:
+                    test_pred_y = model(test_data_x)
+                    loss = loss_function(test_pred_y, test_data_y)
+                    test_loss = loss.item()
+                    print(f'Epoch {epoch} Train loss: {np.round(train_loss,4)} Test loss: {np.round(test_loss,4)}')
+                else:
+                    print(f'Epoch {epoch} Train loss: {np.round(train_loss,4)} Test loss: None')
             epoch += 1
 
         self.regressor_model = model
