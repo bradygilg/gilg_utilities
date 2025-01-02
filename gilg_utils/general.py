@@ -1,7 +1,12 @@
 import yaml
 import pickle
 import json
+import pandas as pd
 
+def maxdisplay(df):
+    with pd.option_context('display.max_rows', None, 'display.max_columns', None):
+        display(df)
+    
 def load_yaml(filename: str):
     """Load a yaml file as a dictionary.
 
@@ -72,3 +77,28 @@ def save_json(obj, filename: str):
 
     with open(filename, 'w') as file:
         json.dump(obj, file, ensure_ascii=False)
+
+def add_jane_multicolumn(input_df,label_column):
+    """Add multicolumn index to input_df used for jane street kaggle competition."""
+    column_categories = []
+    for c in input_df.columns:
+        if '_id' in c:
+            category = 'Key'
+        elif 'feature' in c:
+            category = 'Data'
+        elif c==label_column:
+            category = 'Label'
+        else:
+            category = 'Meta'
+        column_categories.append(category)
+
+    input_df = input_df.fillna(0)
+    input_df.columns = pd.MultiIndex.from_arrays([column_categories,input_df.columns],names=('Category','Column'))
+    return input_df
+
+def impute_columns(input_df,model):
+    """Impute missing columns with zero."""
+    for f in model.features:
+        if f not in input_df.columns:
+            input_df[f] = 0
+    return input_df
