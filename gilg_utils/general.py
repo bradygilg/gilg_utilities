@@ -78,7 +78,7 @@ def save_json(obj, filename: str):
     with open(filename, 'w') as file:
         json.dump(obj, file, ensure_ascii=False)
 
-def add_jane_multicolumn(input_df,label_column):
+def add_jane_multicolumn(input_df,label_column='responder_6'):
     """Add multicolumn index to input_df used for jane street kaggle competition."""
     column_categories = []
     for c in input_df.columns:
@@ -98,7 +98,16 @@ def add_jane_multicolumn(input_df,label_column):
 
 def impute_columns(input_df,model):
     """Impute missing columns with zero."""
+    input_df = input_df.copy()
+    f_columns = input_df['Data'].columns
     for f in model.features:
-        if f not in input_df.columns:
-            input_df[f] = 0
+        if f not in f_columns:
+            input_df[('Data',f)] = 0
     return input_df
+
+def select_multicolumns(df,category,column_list):
+    """Select a set of columns from a category of a multiindex dataframe."""
+    categories = df.columns.get_level_values('Category')
+    columns = df.columns.get_level_values('Column')
+    keep_mask = (categories!=category) | (columns.isin(column_list))
+    return df.loc[:,keep_mask]
