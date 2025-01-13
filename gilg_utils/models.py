@@ -270,7 +270,7 @@ class PytorchNeuralNetworkRegressor(Model):
 
         # Build the scaler
         model = self.regressor_model
-        test_data_x = test_df['Data'][self.features].values
+        train_data_x = train_df['Data'][self.features].values
         train_data_y = train_df['Label'].values
         scaler = self.scaler
         train_data_x = scaler.transform(train_data_x)
@@ -282,7 +282,7 @@ class PytorchNeuralNetworkRegressor(Model):
 
         test_flag = test_df is not None
         if test_flag:
-            test_data_x = test_df['Data'].values
+            test_data_x = test_df['Data'][self.features].values
             test_data_y = test_df['Label'].values
             test_data_x = scaler.transform(test_data_x)
             test_data_x = torch.tensor(test_data_x).float()
