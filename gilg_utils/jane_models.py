@@ -40,7 +40,7 @@ class DiffModel(Model):
         self.label_column = label_column
         self.model_class = model_class
 
-    def train(self, train_df: pd.DataFrame, *args, **kwargs):
+    def train(self, train_df: pd.DataFrame, test_df=None, *args, **kwargs):
         """Difference the train_df first and then train the real model.
 
         :param train_df: Input dataframe with training label under "Label" category and features under "Data" category.
@@ -50,9 +50,11 @@ class DiffModel(Model):
         :rtype: None
         """
         train_df = diff_transformation(train_df)
-        super().train(train_df)
+        if test_df is not None:
+            test_df = diff_transformation(test_df)
+        super().train(train_df,test_df)
         model = self.model_class()
-        model.train(train_df, *args, **kwargs)
+        model.train(train_df, test_df, *args, **kwargs)
         
         self.model = model
 
@@ -364,6 +366,7 @@ class SaveLags(Model):
     
     def predict(self, input_df):
         """Predict on the full multi-index future dataframe."""
+        input_df = input_df.copy()
         input_df.columns = input_df.columns.droplevel('Category')
             
         # Test model
@@ -417,7 +420,6 @@ class StackedModel(SaveLags):
 
     def transform_train_df(self, train_df):
         """Use the regressive and diff model lists to convert the train df into one that uses the outputs of these models."""
-
         transformed_df = train_df[['Key','Meta','Label']].copy()
         for i, model in enumerate(self.regressive_model_list):
             column_name = f"regressive_model_{i}_output"
@@ -429,16 +431,18 @@ class StackedModel(SaveLags):
         transformed_df = expand_lags(transformed_df, self.n_time_lags-1)
         return transformed_df
     
-    def train(self, train_df, *args, **kwargs):
+    def train(self, train_df, test_df=None, *args, **kwargs):
         """Train a new model on the stacked inputs."""
-        super().train(train_df)
+        super().train(train_df, test_df)
         transformed_df = self.transform_train_df(train_df)
+        if test_df is not None:
+            test_df = self.transform_train_df(test_df)
         model = self.model_class()
-        model.train(transformed_df, *args, **kwargs)
+        model.train(transformed_df, test_df, *args, **kwargs)
         self.model = model
         
     def make_predictions(self):
-        """Make stacked model prediction."""
+        """Make stacked model prediction. Need to use the model attribute of diff models so that they don't apply the diff transformation twice."""
         predictions = pd.DataFrame()
         predictions['row_id'] = self.input_df[('Key','row_id')].values
 
@@ -452,7 +456,7 @@ class StackedModel(SaveLags):
         
             for i, model in enumerate(self.diff_model_list):
                 column_name = f"diff_model_{i}_output"
-                test_df[column_name] = model.predict(impute_columns(self.diffs[0],model))
+                test_df[column_name] = model.model.predict(impute_columns(self.diffs[0],model))
 
             for lag in range(self.n_time_lags-1):
                 for i, model in enumerate(self.regressive_model_list):
@@ -461,7 +465,7 @@ class StackedModel(SaveLags):
         
                 for i, model in enumerate(self.diff_model_list):
                     column_name = f"diff_model_{i}_output_lag_{lag+1}"
-                    test_df[column_name] = model.predict(impute_columns(self.diffs[lag+1],model))
+                    test_df[column_name] = model.model.predict(impute_columns(self.diffs[lag+1],model))
 
             test_df.columns = pd.MultiIndex.from_arrays([['Data' for c in test_df.columns],test_df.columns],names=['Category','Column'])
             pred = self.model.predict(impute_columns(test_df,self.model))
@@ -518,6 +522,6 @@ class StackedModel(SaveLags):
             self.regressive_model_list.append(model)
     
         for model_path in sorted(glob.glob(path.join(folder, f'diff_model_*'))):
-            model = self.model_class()
+            model = DiffModel(label_column=self.label_column,model_class=self.model_class)
             model.load(model_path)
             self.diff_model_list.append(model)

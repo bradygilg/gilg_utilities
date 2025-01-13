@@ -11,7 +11,7 @@ class Model:
         for key,value in kwargs.items():
             setattr(self, key, value)
 
-    def train(self, train_df: pd.DataFrame):
+    def train(self, train_df: pd.DataFrame, test_df=None):
         """Save the features and training IDs that were used to train the model.
         
         :param train_df: Input dataframe with training label under "Label" category and features under "Data" category.
@@ -115,7 +115,17 @@ class LinearRegressor(Model):
         super().load(folder)
         model_path = path.join(folder, 'model.pkl')
         self.regressor_model = load_pickle(model_path)
+        
+import torch
+import torch.nn as nn
+class MultiplyByConstant(nn.Module):
+    def __init__(self, constant):
+        super(MultiplyByConstant, self).__init__()
+        self.constant = constant
 
+    def forward(self, x):
+        return x * self.constant
+        
 class PytorchNeuralNetworkRegressor(Model):
     """Simple single hidden layer dense neural network in pytorch."""
 
@@ -129,7 +139,10 @@ class PytorchNeuralNetworkRegressor(Model):
               optimizer_name: str = 'SGD',
               max_epochs: int = 100,
               seed: int = 363,
-              callback_period: int = 10):
+              callback_period: int = 10,
+              tanmultiply: float = None,
+              premultiply: float = 1.0,
+              halve_lr_epochs: int = None):
         """Standardize input features, save the scaler to self.scaler, then train a pytorch neural network on the standardized features and save to self.regressor_model.
 
         :param train_df: Input dataframe with training label under "Label" category and features under "Data" category.
@@ -190,13 +203,25 @@ class PytorchNeuralNetworkRegressor(Model):
             test_data_x = torch.tensor(test_data_x).float()
             test_data_y = torch.tensor(test_data_y).float().reshape(-1,1)
 
-        model = nn.Sequential(
-                    nn.Linear(train_data_x.size()[1], dimension),
-                    nn.Dropout(dropout_rate),
-                    nn.ReLU(),
-                    nn.Linear(dimension, 1)
-        )
 
+        if tanmultiply is not None:
+            model = nn.Sequential(
+                        nn.Linear(train_data_x.size()[1], dimension),
+                        nn.Dropout(dropout_rate),
+                        nn.ReLU(),
+                        nn.Linear(dimension, 1),
+                        MultiplyByConstant(premultiply),
+                        nn.Tanh(),
+                        MultiplyByConstant(tanmultiply),
+            )
+        else:
+            model = nn.Sequential(
+                        nn.Linear(train_data_x.size()[1], dimension),
+                        nn.Dropout(dropout_rate),
+                        nn.ReLU(),
+                        nn.Linear(dimension, 1),
+            )
+        
         loss_function = getattr(nn, loss_function_name)()
         optimizer = getattr(torch.optim, optimizer_name)(model.parameters(), lr=learning_rate)
 
@@ -220,12 +245,80 @@ class PytorchNeuralNetworkRegressor(Model):
                     print(f'Epoch {epoch} Train loss: {np.round(train_loss,4)} Test loss: {np.round(test_loss,4)}')
                 else:
                     print(f'Epoch {epoch} Train loss: {np.round(train_loss,4)} Test loss: None')
+            if halve_lr_epochs is not None:
+                if (epoch % halve_lr_epochs == 0):
+                    learning_rate *= 0.5
+                    optimizer = getattr(torch.optim, optimizer_name)(model.parameters(), lr=learning_rate)
             epoch += 1
 
         self.regressor_model = model
         self.scaler = scaler
 
+    def continue_training(self,
+                          train_df, 
+                          test_df = None,
+                          max_epochs = 100,
+                          seed = 363,
+                          learning_rate = 0.01,
+                          optimizer_name = 'SGD',
+                          loss_function_name = 'MSELoss',
+                          halve_lr_epochs = None,
+                          callback_period: int = 10):
+        import torch
+        import torch.nn as nn
+        from sklearn.preprocessing import StandardScaler
 
+        # Build the scaler
+        model = self.regressor_model
+        train_data_x = train_df['Data'].values
+        train_data_y = train_df['Label'].values
+        scaler = self.scaler
+        train_data_x = scaler.transform(train_data_x)
+            
+        # Specify model parameters
+        torch.manual_seed(seed)
+        train_data_x = torch.tensor(train_data_x).float()
+        train_data_y = torch.tensor(train_data_y).float().reshape(-1,1)
+
+        test_flag = test_df is not None
+        if test_flag:
+            test_data_x = test_df['Data'].values
+            test_data_y = test_df['Label'].values
+            test_data_x = scaler.transform(test_data_x)
+            test_data_x = torch.tensor(test_data_x).float()
+            test_data_y = torch.tensor(test_data_y).float().reshape(-1,1)
+        
+        loss_function = getattr(nn, loss_function_name)()
+        optimizer = getattr(torch.optim, optimizer_name)(model.parameters(), lr=learning_rate)
+
+        train_loss = np.inf
+        epoch = 0
+        while epoch <= max_epochs:
+            pred_y = model(train_data_x)
+            loss = loss_function(pred_y, train_data_y)
+            train_loss = loss.item()
+
+            model.zero_grad()
+            loss.backward()
+            optimizer.step()
+
+            if (epoch % callback_period == 0):
+                if test_flag:
+                    test_pred_y = model(test_data_x)
+                    loss = loss_function(test_pred_y, test_data_y)
+                    test_loss = loss.item()
+                    print(f'Epoch {epoch} Train loss: {np.round(train_loss,4)} Test loss: {np.round(test_loss,4)}')
+                else:
+                    print(f'Epoch {epoch} Train loss: {np.round(train_loss,4)} Test loss: None')
+            if halve_lr_epochs is not None:
+                if (epoch % halve_lr_epochs == 0):
+                    learning_rate *= 0.5
+                    optimizer = getattr(torch.optim, optimizer_name)(model.parameters(), lr=learning_rate)
+            epoch += 1
+            
+        self.regressor_model = model
+        self.scaler = scaler
+        
     def predict(self, test_df: pd.DataFrame):
         """Run pytorch regression model on input data.
 
