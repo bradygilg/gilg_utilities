@@ -270,7 +270,7 @@ class PytorchNeuralNetworkRegressor(Model):
 
         # Build the scaler
         model = self.regressor_model
-        train_data_x = train_df['Data'].values
+        test_data_x = test_df['Data'][self.features].values
         train_data_y = train_df['Label'].values
         scaler = self.scaler
         train_data_x = scaler.transform(train_data_x)
